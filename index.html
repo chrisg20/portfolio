@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101216">
+  <meta name="description" content="Chris Grauberger's project portfolio — an interactive collection of engineering projects.">
+  <title>Chris Grauberger — Projects</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head>
+<body>
+  <a class="skip" href="#project-details">Skip to project details</a>
+  <header class="masthead"><a class="identity" href="./"><span class="monogram">CG<span>↗</span></span><span>Chris Grauberger<span class="identity-sub">ENGINEERING PORTFOLIO</span></span></a><a class="github" href="https://github.com/chrisg20" target="_blank" rel="noopener noreferrer">GitHub ↗</a></header>
+  <main>
+    <section class="collection" aria-labelledby="collection-title">
+      <div class="section-heading"><div><p class="eyebrow">THE PROJECT COLLECTION</p><h1 id="collection-title">Ideas, in three dimensions<span>.</span></h1></div><div class="gallery-controls"><span id="position">01 / 05</span><button id="previous" aria-label="Previous project">←</button><button id="next" aria-label="Next project">→</button></div></div>
+      <div class="gallery-shell"><div id="gallery" class="gallery" role="tablist" aria-label="Projects"></div></div>
+      <div class="gallery-foot"><span>Scroll to explore · Select a project</span><button id="motion" aria-pressed="true">Pause rotation</button></div>
+      <p id="render-status" role="status" hidden></p>
+    </section>
+    <section id="project-details" class="details" role="tabpanel" tabindex="0" aria-labelledby="project-tab-0">
+      <div class="project-intro"><p class="eyebrow" id="project-category"></p><h2 id="project-title"></h2><p class="lead" id="project-summary"></p><div id="project-tags" class="tags"></div><p class="placeholder-note">Placeholder project · Model and write-up coming soon</p></div>
+      <div class="project-story"><div class="story-head"><span class="eyebrow">PROJECT NOTES</span><span id="project-number"></span></div><h3>The idea</h3><p id="project-overview"></p><div class="notes-grid"><div><h3>The approach</h3><p id="project-approach"></p></div><div><h3>What comes next</h3><p id="project-next"></p></div></div></div>
+    </section>
+  </main>
+  <footer><span>Chris Grauberger</span><span>DESIGN · BUILD · EXPLORE</span></footer>
+  <noscript><p class="no-script">Enable JavaScript to explore the 3D models and project descriptions.</p></noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
