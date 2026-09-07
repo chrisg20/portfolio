@@ -1,7 +1,7 @@
 // Replace these examples with your projects. model: './models/example.glb'
 // accepts a self-contained, uncompressed GLB; null uses a procedural placeholder.
 export const projects = [
-  { id: 'project-01', title: 'Antenna array', category: 'RF & ELECTROMAGNETICS', color: '#d6ef75', shape: 'array', model: null,
+  { id: 'project-01', title: 'Hermite-Gaussian Phased Array Atenna', category: 'RF & ELECTROMAGNETICS', color: '#d6ef75', shape: 'array', model: null,
     summary: 'An exploration of how individual elements become a coordinated system.',
     tags: ['RF design', 'Simulation', 'Prototyping'],
     overview: 'This is a sample project entry. Use this space to describe the problem, why it mattered, and what you set out to build.',
