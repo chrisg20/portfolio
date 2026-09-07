@@ -4,6 +4,7 @@ const gallery = document.querySelector('#gallery');
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let selected = 0;
 let rotating = !reducedMotion.matches;
+const modelViews = [];
 const cards = projects.map((project, index) => {
   const card = document.createElement('button');
   card.className = 'project-card';
@@ -42,6 +43,21 @@ function select(index, scroll = true) {
 }
 
 gallery.addEventListener('keydown', event => {
+  const view = modelViews[selected];
+  if (view && event.shiftKey && ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+    event.preventDefault();
+    const amount = .16;
+    if (event.key === 'ArrowRight') view.pivot.rotation.y += amount;
+    if (event.key === 'ArrowLeft') view.pivot.rotation.y -= amount;
+    if (event.key === 'ArrowUp') view.pivot.rotation.x = Math.max(-1.35, view.pivot.rotation.x - amount);
+    if (event.key === 'ArrowDown') view.pivot.rotation.x = Math.min(1.35, view.pivot.rotation.x + amount);
+    return;
+  }
+  if (view && ['+', '=', '-'].includes(event.key)) {
+    event.preventDefault();
+    zoomView(view, event.key === '-' ? 1.12 : .89);
+    return;
+  }
   let next;
   if (event.key === 'ArrowRight') next = Math.min(selected + 1, projects.length - 1);
   if (event.key === 'ArrowLeft') next = Math.max(selected - 1, 0);
@@ -64,10 +80,15 @@ function status(message) {
   element.textContent = message; element.hidden = false;
 }
 
+function zoomView(view, multiplier) {
+  view.distance = Math.max(3.1, Math.min(10, view.distance * multiplier));
+  view.camera.position.copy(view.cameraDirection).multiplyScalar(view.distance);
+  view.camera.lookAt(0, 0, 0);
+}
+
 async function initializeModels() {
   const THREE = await import('three');
   const { GLTFLoader } = await import('./vendor/GLTFLoader.js');
-  const views = [];
   const loader = new GLTFLoader();
   const baseMaterial = color => new THREE.MeshStandardMaterial({color, metalness: .38, roughness: .34});
   function placeholder(project) {
@@ -117,7 +138,7 @@ async function initializeModels() {
     return group;
   }
   const observer = new IntersectionObserver(entries => {
-    for(const entry of entries) { const view=views.find(v=>v.host===entry.target);if(view)view.visible=entry.isIntersecting; }
+    for(const entry of entries) { const view=modelViews.find(v=>v?.host===entry.target);if(view)view.visible=entry.isIntersecting; }
   });
   for (let index = 0; index < projects.length; index++) {
     const project = projects[index], host=cards[index].querySelector('.model-view');
@@ -133,9 +154,54 @@ async function initializeModels() {
     const fill=new THREE.DirectionalLight(project.color,1.4);fill.position.set(-4,1,-2);scene.add(fill);
     const camera=new THREE.PerspectiveCamera(34,1,.01,100);camera.position.set(3.5,3.1,5);camera.lookAt(0,0,0);
     const pivot=new THREE.Group();scene.add(pivot);pivot.add(placeholder(project));pivot.rotation.y=-.3;
-    const view={renderer,scene,camera,pivot,host,visible:true,index};views.push(view);observer.observe(host);
+    const view={renderer,scene,camera,pivot,host,visible:true,index,interacting:false,distance:camera.position.length(),cameraDirection:camera.position.clone().normalize()};modelViews[index]=view;observer.observe(host);
     const resize=new ResizeObserver(()=> { const w=host.clientWidth,h=host.clientHeight;if(w&&h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.render(scene,camera);} });resize.observe(host);
     renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();status('A 3D preview was interrupted. Reload the page to restore it; project details remain available.');});
+    const pointers = new Map();
+    let lastCenter = null;
+    let lastPinchDistance = null;
+    const pointerCenter = () => {
+      const values = [...pointers.values()];
+      return {x: values.reduce((sum, point) => sum + point.x, 0) / values.length, y: values.reduce((sum, point) => sum + point.y, 0) / values.length};
+    };
+    const pinchDistance = () => {
+      const [a, b] = [...pointers.values()];
+      return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : null;
+    };
+    renderer.domElement.addEventListener('pointerdown', event => {
+      if (index !== selected) return;
+      renderer.domElement.setPointerCapture(event.pointerId);
+      pointers.set(event.pointerId, {x:event.clientX, y:event.clientY});
+      view.interacting = true;
+      lastCenter = pointerCenter();
+      lastPinchDistance = pinchDistance();
+    });
+    renderer.domElement.addEventListener('pointermove', event => {
+      if (!pointers.has(event.pointerId) || index !== selected) return;
+      pointers.set(event.pointerId, {x:event.clientX, y:event.clientY});
+      const center = pointerCenter();
+      const distance = pinchDistance();
+      if (distance && lastPinchDistance) zoomView(view, lastPinchDistance / distance);
+      if (!distance && lastCenter) {
+        view.pivot.rotation.y += (center.x - lastCenter.x) * .012;
+        view.pivot.rotation.x = Math.max(-1.35, Math.min(1.35, view.pivot.rotation.x + (center.y - lastCenter.y) * .012));
+      }
+      lastCenter = center;
+      lastPinchDistance = distance;
+    });
+    const releasePointer = event => {
+      pointers.delete(event.pointerId);
+      view.interacting = pointers.size > 0;
+      lastCenter = pointers.size ? pointerCenter() : null;
+      lastPinchDistance = pinchDistance();
+    };
+    renderer.domElement.addEventListener('pointerup', releasePointer);
+    renderer.domElement.addEventListener('pointercancel', releasePointer);
+    renderer.domElement.addEventListener('wheel', event => {
+      if (index !== selected) return;
+      event.preventDefault();
+      zoomView(view, Math.exp(event.deltaY * .001));
+    }, {passive:false});
     if(project.model) {
       loader.load(project.model,gltf=>{
         const model=gltf.scene;
@@ -153,9 +219,9 @@ async function initializeModels() {
     requestAnimationFrame(frame);
     if(document.hidden||time-last<33)return;
     const delta=Math.min((time-last)/1000,.05);last=time;
-    for(const view of views) {
+    for(const view of modelViews) {
       if(!view.visible)continue;
-      if(rotating)view.pivot.rotation.y+=delta*(view.index===selected?.27:.12);
+      if(rotating && !view.interacting)view.pivot.rotation.y+=delta*(view.index===selected?.27:.12);
       view.renderer.render(view.scene,view.camera);
     }
   }

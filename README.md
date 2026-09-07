@@ -19,8 +19,9 @@ Run `python3 -m http.server 8000` in the repository and open http://localhost:80
 ## Interaction and accessibility
 
 - Swipe or horizontally scroll through models; select a card to update the details below.
+- Drag the selected model to rotate it. Use a mouse wheel or two-finger pinch to zoom.
 - Previous/next buttons select and reveal adjacent projects.
-- With the gallery focused, use Left/Right, Home, or End to select a project.
+- With the gallery focused, use Left/Right, Home, or End to select a project. Hold Shift with an arrow key to rotate, and use +/− to zoom.
 - The rotation control pauses all models; reduced-motion preferences disable automatic rotation initially.
 - If WebGL fails, project selection and text still work.
 - Offscreen models and hidden browser tabs avoid rendering work. Pixel ratio and animation rate are capped for mobile devices.
